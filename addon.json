@@ -1,0 +1,6 @@
+{
+	"title"		:	"Advanced Player Model Groups",
+	"type"		:	"tool",
+	"tags"		:	[ "fun","realism" ],
+	"ignore"	:	[".git/*","*.jpg", "*.xcf", "LICENSE"]
+}
