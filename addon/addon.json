@@ -1,5 +1,5 @@
 {
-	"title"		:	"Advanced Player Model Groups",
+	"title"		:	"Advanced Player Model Groups (for TTT)",
 	"type"		:	"tool",
 	"tags"		:	[ "fun","realism" ],
 	"ignore"	:	[".git/*","*.jpg", "*.xcf", "LICENSE"]
