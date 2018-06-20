@@ -14,12 +14,16 @@ This file is part of the "Trouble in Terrorist Town" AddOn "Advanced Player Mode
     You should have received a copy of the GNU General Public License
     along with TTT_APMP.  If not, see <http://www.gnu.org/licenses/>.
 ]]
-print("INFO TTT_APMP: server loaded")
+
+-- TODO engine.ActiveGamemode()
+
+print("DEBUG TTT_APMP_server loaded")
 CreateConVar("ttt_pmodel", "default")
-
 -- Net Library: https://wiki.garrysmod.com/page/Net_Library_Usage
+-- set message name for net Library:
+util.AddNetworkString("TTT_APMP_NET_MSG")
 
--- our hard coded (TODO) model pools
+--TODO: our hard coded model pools
 local pmp_male = {
 	Model("models/player/daedric.mdl"),
 	Model("models/thresh/thresh.mdl"),
@@ -98,31 +102,9 @@ local pmp_zelda = {
 	Model("models/player/ganondorf/ganondorf.mdl"),
 	Model("models/player/hw_hildaqueen.mdl") }
 
-local function evaluatePlayerModelPool()
-
-	local results = {0,0,0,0,0,0,0}
-	if(results[1] != nil) then
-		for key,ply in pairs(player.GetAll()) do
-			local plyRes = ply:GetInfoNum("TTT_APMP_selected", 0)
-			print("DEBUG: evaluatePlayerModelPool loop, plyRes="..plyRes.." results="..results[1])
-			results[plyRes] = results[plyRes]+1
-		end
-	end
-	local mostVotesIndex = 0
-	local mostVotesCounter = 0
-	for key,ele in pairs(results) do
-		if mostVotesCounter <= ele then
-			mostVotesIndex = key
-			mostVotesCounter = ele
-		end
-	end
-	return mostVotesIndex
-end
-
-
 -- PlayerModelPools that are assosiated with certain maps
-hook.Add("Initialize", "ttt_apmp assosiated maps with player model pools",  function()
-	--print("MYDEBUG: " ..game.GetMap())
+-- TODO reimplement to new structure
+--[[hook.Add("Initialize", "TTT_APMP assosiated maps with player model pools",  function()
 	local ttt_pmodel_maps = {["ttt_outset_island"] = "zelda",
 		["ttt_lttp_kakariko_a4"] = "zelda",
 		["ttt_lostwoods"] = "zelda",
@@ -134,12 +116,45 @@ hook.Add("Initialize", "ttt_apmp assosiated maps with player model pools",  func
 		print("DEBUG ttt_pmodel is " .. GetConVar("ttt_pmodel"):GetString() )
 	end
 end)
+]]
+
+-- Send available player model groups to connecting clients
+hook.Add("PlayerInitialSpawn", "TTT_APMP send pm list to player", function(ply)
+	print("DEBUG TTT_APMP_server, sending available pm groups to player "..ply:Nick())
+	net.Start("TTT_APMP_NET_MSG")
+	-- the message to the clients itself TODO from config
+	net.WriteString("male,female,anime (male),anime (female),superheroes,metal gear,zelda")
+	net.Send(ply)
+end)
+
+-- function evaluatePlayerModelPool returns the player model group with most votes
+-- TODO this function is very ugly... tidy up soon!
+-- might https://wiki.garrysmod.com/page/Tables:_Bad_Habits help?
+local function evaluatePlayerModelPool()
+	local results = {0,0,0,0,0,0,0,0}
+	--if(results[1] != nil) then
+		for key,ply in pairs(player.GetAll()) do
+			local plyRes = ply:GetInfoNum("TTT_APMP_selected", 1)
+			print("INFO TTT_APMP_server evaluatePlayerModelPool loop: plyRes="..plyRes.." results="..results[1])
+			results[plyRes] = results[plyRes]+1
+		end
+	--end
+	local mostVotesIndex = 0
+	local mostVotesCounter = 0
+	for key,ele in pairs(results) do
+		if mostVotesCounter <= ele then
+			mostVotesIndex = key
+			mostVotesCounter = ele
+		end
+	end
+	return mostVotesIndex
+end
 
 -- TTT_APMP core function hooked to PrepareRound
-hook.Add("TTTPrepareRound", "ttt_apmp_core function",  function()
-	print("DEBUG: customPlayerModel()\n\tttt_pmodel = " .. GetConVar("ttt_pmodel"):GetString() )
+hook.Add("TTTPrepareRound", "TTT_APMP core function",  function()
+	--print("DEBUG TTT_APMP_server: customPlayerModel()\n\tttt_pmodel = " .. GetConVar("ttt_pmodel"):GetString() )
 	local playerPoolIndex = evaluatePlayerModelPool()
-	print("DeBUG: result of evaluatePlayerModelPool: ".. playerPoolIndex)
+	print("DeBUG TTT_APMP_server: result of evaluatePlayerModelPool: ".. playerPoolIndex)
 	if playerPoolIndex != 1 then
 		local pm_roll = nil
 
@@ -161,8 +176,8 @@ hook.Add("TTTPrepareRound", "ttt_apmp_core function",  function()
 		if pm_roll != nil then
 			GAMEMODE.playermodel = table.Random(pm_roll)
 		else
-			print("TTT_APMP Error: unknown player model pool")
+			print("Error TTT_APMP_server: unknown player model pool")
 		end
 	end
-	print("\tPM-INFO: roll for this round is " .. GAMEMODE.playermodel)
+	print("INFO TTT_APMP_server: roll for this round is " .. GAMEMODE.playermodel)
 end)

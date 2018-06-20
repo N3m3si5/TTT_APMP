@@ -1,6 +1,5 @@
 --[[ Copyright and license:
 Copyright 2018 Christian Luca Lützenkirchen
-
 This file is part of the "Trouble in Terrorist Town" AddOn "Advanced Player Model Pool" (TTT_APMP).
 
     TTT_APMP is free software: you can redistribute it and/or modify
@@ -15,12 +14,23 @@ This file is part of the "Trouble in Terrorist Town" AddOn "Advanced Player Mode
     You should have received a copy of the GNU General Public License
     along with TTT_APMP.  If not, see <http://www.gnu.org/licenses/>.
 ]]
-print("INFO TTT_APMP: client loaded")
+
+-- TODO engine.ActiveGamemode()
+
+print("DEBUG TTT_APMP_client loaded")
 CreateClientConVar("TTT_APMP_selected", 1, false, true, "TTT player model pool selection; is evaluated by the server")  -- Send choice to server
 CreateConVar("TTT_APMP_selected_display_text", "")
 
+CreateConVar("TTT_APMP_available_pools", "")
+net.Receive("TTT_APMP_NET_MSG", function()
+  local res = net.ReadString()
+  RunConsoleCommand("TTT_APMP_available_pools", res)
+  print("DEBUG TTT_APMP_client: received "..res)
+end)
+
+-- Player Model tab in settings menu
 hook.Add("TTTSettingsTabs", "ttt advanced player model pool client settings panel", function(dtabs)
-  print("DEBUG: settings tab function hook called")
+  print("DEBUG TTT_APMP_client: Player model tab added to settings")
 
   local DPanelList = vgui.Create("DPanelList", dtabs)
   DPanelList:StretchToParent(0,0,padding,0)
@@ -47,7 +57,7 @@ hook.Add("TTTSettingsTabs", "ttt advanced player model pool client settings pane
   cb.OnSelect = function(panel, index, value)
     RunConsoleCommand("TTT_APMP_selected_display_text", value)
     RunConsoleCommand("TTT_APMP_selected", index) -- for now we simply send the index to the server
-    print("DEBUG DFormPMSel: value: "..value..", index: "..index)
+    print("INFO TTT_APMP_client DFormPMSel: value: "..value..", index: "..index)
   end
   DPanelList:AddItem(DFormPMSel)
 
