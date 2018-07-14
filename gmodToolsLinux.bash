@@ -2,7 +2,8 @@
 # Create the gmod gma addon file and publish it to steam
 #
 # Copyright 2018 Christian Luca Lützenkirchen
-# This file is part of the "Trouble in Terrorist Town" AddOn "Advanced Player Model Pool" (TTT_APMP).
+# This file is part of the AddOn "Advanced Player Model Pool" (TTT_APMP) for
+# "Trouble in Terrorist Town" (a "Garry's Mod" game mode).
 #
 #    TTT_APMP is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -21,7 +22,7 @@
 #}
 #do_publish(){
 #  cd ~/.steam/steam/steamapps/common/GarrysMod/bin
-#  LD_LIBRARY_PATH=~/.steam/steam/steamapps/common/GarrysMod/bin/ ./gmpublish_linux create -addon ~/Documents/prog/ttt_apmp.gma -icon ~/Documents/prog/picture.jpg  
+#  LD_LIBRARY_PATH=~/.steam/steam/steamapps/common/GarrysMod/bin/ ./gmpublish_linux create -addon ~/Documents/prog/ttt_apmp.gma -icon ~/Documents/prog/picture.jpg
 #}
 
 $GMOD_TOOLS_DIR="~/.steam/steam/steamapps/common/GarrysMod/bin"
