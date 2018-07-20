@@ -1,11 +1,12 @@
 # Advanced Player Model Pools (TTT_APMP)
 player model group managment tool (addon) for the "Trouble in Terrorist Town" gamemode of Garry's Mod.
 
-TODO: add more description on usage etc.
+TODO: description on gmodTools-script (create gma and upload to steam)
 
 configuration:
 under "GarrysMod/garrysmod/data/" create a lua-file called "ttt_apmp_shared.lua".
-define a variable called pmp. This variable needs to be a an table that contains tables (these are our model groups). The first element of these inner tables is an string; the group name. The second Element is (again) a table containing strings (the path to the player model mdl files). Just like for the default models of TTT simply call the Model()-function with the string to the mdl as shown in the following example:
+First add AddCSLuaFile() to the first line, then define a variable called pmp. This variable needs to be a an table that contains tables (these are our model groups). The first element of these inner tables is an string; the group name. The second Element is (again) a table containing strings (the path to the player model mdl files). Just like for the default models of TTT simply call the Model()-function with the string to the mdl as shown in the following example:
+AddCSLuaFile()
 pmp = {
   {"super heroes", { Model("models/player/superheroes/superman.mdl"),
   	Model("models/player/superheroes/flash.mdl"),

@@ -19,7 +19,7 @@ This file is part of the AddOn "Advanced Player Model Pool" (TTT_APMP) for
 -- TODO engine.ActiveGamemode()
 
 print("DEBUG TTT_APMP_client loaded")
-include ("../../../data/ttt_apmp_shared.lua")
+include ("../data/ttt_apmp_shared.lua")
 CreateClientConVar("TTT_APMP_selected", 1, true, true, "TTT player model pool selection; is evaluated by the server")  -- Send choice to server
 CreateConVar("TTT_APMP_selected_display_text", "TTT default")
 CreateConVar("TTT_APMP_PREVIEW_NUM", 1)

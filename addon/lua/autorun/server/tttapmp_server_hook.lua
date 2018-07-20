@@ -19,8 +19,8 @@ This file is part of the AddOn "Advanced Player Model Pool" (TTT_APMP) for
 -- TODO engine.ActiveGamemode()
 
 print("DEBUG TTT_APMP_server loaded")
-AddCSLuaFile("../../../data/ttt_apmp_shared.lua")
-include ("../../../data/ttt_apmp_shared.lua")
+--AddCSLuaFile("../data/ttt_apmp_shared.lua") this does not seem to work... for now in shared conf itself!!!
+include ("../data/ttt_apmp_shared.lua")
 CreateConVar("ttt_pmodel", "default")
 -- Net Library: https://wiki.garrysmod.com/page/Net_Library_Usage
 -- set message name for net Library:
