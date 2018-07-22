@@ -31,28 +31,26 @@ net.Receive("TTT_APMP_NET_MSG", function()
   print("DEBUG TTT_APMP_client received: "..res)
 end)
 
-hook.Add("TTTPrepareRound", "TTT_APMP client prepare round hook",  function()
-  if pmp ~= nil then
-    print("DEBUG TTT_APMP_client: PrepareRound")
-    -- test if TTT_APMP_selected_display_text still matches the persistent TTT_APMP_selected index
-    local pmp_selected_index = GetConVar("TTT_APMP_selected"):GetInt()
-    if pmp_selected_index > 1 then
-      if pmp_selected_index > #pmp+1 then
-        RunConsoleCommand("TTT_APMP_selected_display_text", "TTT default")
-        RunConsoleCommand("TTT_APMP_selected", 1)
-        pmp_selected_index = 1
-      elseif pmp[pmp_selected_index-1][1] != GetConVar("TTT_APMP_selected_display_text"):GetString() then
-        RunConsoleCommand("TTT_APMP_selected_display_text", pmp[pmp_selected_index-1][1])
-        print("INFO TTT_APMP_client sel mismatch: corrected TTT_APMP_selected_display_text to TTT_APMP_selected")
-      end
+local function checkConVars()
+  -- test if TTT_APMP_selected_display_text still matches the persistent TTT_APMP_selected index
+  local pmp_selected_index = GetConVar("TTT_APMP_selected"):GetInt()
+  if pmp_selected_index > 1 then
+    if pmp_selected_index > #pmp+1 then
+      RunConsoleCommand("TTT_APMP_selected_display_text", "TTT default")
+      RunConsoleCommand("TTT_APMP_selected", 1)
+      pmp_selected_index = 1
+    elseif pmp[pmp_selected_index-1][1] != GetConVar("TTT_APMP_selected_display_text"):GetString() then
+      RunConsoleCommand("TTT_APMP_selected_display_text", pmp[pmp_selected_index-1][1])
+      print("INFO TTT_APMP_client sel mismatch: corrected TTT_APMP_selected_display_text to TTT_APMP_selected")
     end
   end
-end)
+end
 
 --hook to TTTSettingsTabs: add Player Model tab to settings menu
 hook.Add("TTTSettingsTabs", "ttt advanced player model pool client settings panel", function(dtabs)
   if pmp ~= nil then
     print("DEBUG TTT_APMP_client: Player model tab added to settings")
+    checkConVars()
     local lastSelectedModelGroup = GetConVar("TTT_APMP_selected"):GetInt()
     local lastValidModelIndex = GetConVar("TTT_APMP_PREVIEW_NUM"):GetInt()
 
@@ -91,8 +89,8 @@ hook.Add("TTTSettingsTabs", "ttt advanced player model pool client settings pane
 
     local DPanelPreview = vgui.Create("DModelPanel")
     function DPanelPreview:LayoutEntity( Entity ) return end	-- Disable cam rotation
-    function DPanelPreview:TrySettingModel()   -- wraper to set our models properly
-      mdl = nil
+    function DPanelPreview:TryToSetModel()   -- wraper to set our models properly
+      local mdl = nil
       if lastSelectedModelGroup == 1 then
         mdl = ttt_defaultmodels[lastValidModelIndex]
         if mdl ~= nil then
@@ -106,16 +104,17 @@ hook.Add("TTTSettingsTabs", "ttt advanced player model pool client settings pane
         if mdl ~= nil then
           self:SetModel(mdl)
         else
-          print("ERROR: apmp model was nil")
+          print("ERROR: apmp["..(lastSelectedModelGroup-1).."][2]["..lastValidModelIndex.."] was nil")
           return
         end
       end
+      -- center model in preview
       local headpos = self.Entity:GetBonePosition( self.Entity:LookupBone( "ValveBiped.Bip01_Spine" ) )
       self:SetLookAt( headpos+Vector(0,0,3) )
       self:SetCamPos( headpos-Vector(-115,0,0) )	-- Move cam away
     end
     DPanelPreview:SetSize(218,218)
-    DPanelPreview:TrySettingModel()
+    DPanelPreview:TryToSetModel()
 
     DPanelList:AddItem(DPanelPreview)
 
@@ -131,8 +130,8 @@ hook.Add("TTTSettingsTabs", "ttt advanced player model pool client settings pane
       else
         modelNumber:SetMax(4)
       end
-      modelNumber:ResetToDefaultValue()  -- implicitly makes a call to OnValueChanged
-      DPanelPreview:TrySettingModel()
+      modelNumber:ResetToDefaultValue()
+      DPanelPreview:TryToSetModel()
     end
 
     function modelNumber:OnValueChanged(val)
@@ -147,10 +146,10 @@ hook.Add("TTTSettingsTabs", "ttt advanced player model pool client settings pane
       if lastValidModelIndex != val then
         print("DEBUG: Model number changed from "..lastValidModelIndex.." to "..val..", lastSelectedModelGroup is "..lastSelectedModelGroup)
         lastValidModelIndex = val
-        DPanelPreview:TrySettingModel()
+        DPanelPreview:TryToSetModel()
       end
     end
 
-    dtabs:AddSheet("Player Model", DPanelList, "icon16/user.png", false, false, "Select your vote for one player model group and send it to the server")
+    dtabs:AddSheet("Player Model", DPanelList, "icon16/user.png", false, false, "Make or change your vote for a player model group")
   end
 end)

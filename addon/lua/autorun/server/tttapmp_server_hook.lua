@@ -69,26 +69,33 @@ end)
 -- TODO this function is very ugly... tidy up soon!
 -- might https://wiki.garrysmod.com/page/Tables:_Bad_Habits help?
 local function evaluatePlayerModelPool()
-	local results = {} -- {0,0,0,0,0,0,0,0}
-	for i=1,(#pmp)+1 do
-		results[i] = 0
+	local results = {} -- will take two elemented tables as elements: first is the pm-group-index, second is the vote amount for this group
+	for i=1,#pmp+1 do
+		local buf = {i,0}
+		table.insert(results, buf)
 	end
 
-	for k,ply in ipairs(player.GetAll()) do		-- player.getHumans() better?
-		local plyRes = ply:GetInfoNum("TTT_APMP_selected", 1)
-		results[plyRes] = results[plyRes]+1
-		print("INFO TTT_APMP_server evaluatePlayerModelPool loop: results["..plyRes.."]="..results[plyRes])
+	for k,ply in ipairs(player.GetHumans()) do
+		local plyVote = ply:GetInfoNum("TTT_APMP_selected", 1)
+		results[plyVote][2] = results[plyVote][2]+1
+		print("DEBUG TTT_APMP_server evaluatePlayerModelPool loop: results["..plyVote.."][2]="..results[plyVote][2])
 	end
 
-	local mostVotesIndex = 1 -- 1 is default
-	local mostVotesCounter = 0
-	for key,ele in pairs(results) do
-		if mostVotesCounter <= ele then -- TODO implement random if is equal
-			mostVotesIndex = key
-			mostVotesCounter = ele
+	local mostVotes = 0
+	for i=1,#results do
+		if mostVotes<results[i][2] then
+			mostVotes=results[i][2]
 		end
 	end
-	return mostVotesIndex
+
+	for i=#results,1,-1 do
+		--print("DEBUG DEBUG tabele "..table.ToString(results))
+		if results[i][2]~=mostVotes then
+			table.remove(results, i)
+		end
+	end
+
+	return (table.Random(results)[1])
 end
 
 -- hook to TTTPrepareRound: set global TTT pmodel
