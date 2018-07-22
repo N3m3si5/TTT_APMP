@@ -24,7 +24,7 @@ include ("../data/ttt_apmp_shared.lua")
 CreateConVar("ttt_pmodel", "default")
 -- Net Library: https://wiki.garrysmod.com/page/Net_Library_Usage
 -- set message name for net Library:
-util.AddNetworkString("TTT_APMP_NET_MSG")
+util.AddNetworkString("TTT_APMP_ELECTIONS_MSG")
 
 --[[
 local pmp_config = nil
@@ -57,44 +57,52 @@ hook.Add("Initialize", "TTT_APMP assosiated maps with player model pools",  func
 end)
 
 -- Send available player model groups to connecting clients
-hook.Add("PlayerInitialSpawn", "TTT_APMP send pm list to player", function(ply)
+--[[hook.Add("PlayerInitialSpawn", "TTT_APMP send pm list to player", function(ply)
 	print("DEBUG TTT_APMP_server, sending available pm groups to player "..ply:Nick())
-	net.Start("TTT_APMP_NET_MSG")
+	net.Start("TTT_APMP_ELECTIONS_MSG")
 	-- write a message to client, for later use
 	net.WriteString("dummy msg from srv to client")
 	net.Send(ply)
 end)
+]]
 
 -- function evaluatePlayerModelPool returns the player model group with most votes
 -- TODO this function is very ugly... tidy up soon!
 -- might https://wiki.garrysmod.com/page/Tables:_Bad_Habits help?
 local function evaluatePlayerModelPool()
+	local buf	-- used multiple times
 	local results = {} -- will take two elemented tables as elements: first is the pm-group-index, second is the vote amount for this group
 	for i=1,#pmp+1 do
-		local buf = {i,0}
+		buf = {i,0}
 		table.insert(results, buf)
 	end
 
-	for k,ply in ipairs(player.GetHumans()) do
-		local plyVote = ply:GetInfoNum("TTT_APMP_selected", 1)
-		results[plyVote][2] = results[plyVote][2]+1
-		print("DEBUG TTT_APMP_server evaluatePlayerModelPool loop: results["..plyVote.."][2]="..results[plyVote][2])
+	for k,v in ipairs(player.GetHumans()) do
+		buf = v:GetInfoNum("TTT_APMP_selected", 1)
+		results[buf][2] = results[buf][2]+1
+		print("DEBUG TTT_APMP_server evaluatePlayerModelPool loop: results["..buf.."][2]="..results[buf][2])
 	end
 
-	local mostVotes = 0
+	-- send results to players
+	net.Start("TTT_APMP_ELECTIONS_MSG")
+	net.WriteString(util.TableToJSON(results))
+	net.Broadcast()
+
+	-- find group with most votes
+	buf = 0
 	for i=1,#results do
-		if mostVotes<results[i][2] then
-			mostVotes=results[i][2]
+		if buf<results[i][2] then
+			buf=results[i][2]
 		end
 	end
 
+	-- reducing results to winner(s)
 	for i=#results,1,-1 do
 		--print("DEBUG DEBUG tabele "..table.ToString(results))
-		if results[i][2]~=mostVotes then
+		if results[i][2]~=buf then
 			table.remove(results, i)
 		end
 	end
-
 	return (table.Random(results)[1])
 end
 

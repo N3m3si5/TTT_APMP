@@ -25,10 +25,14 @@ CreateConVar("TTT_APMP_selected_display_text", "TTT default")
 CreateConVar("TTT_APMP_PREVIEW_NUM", 1)
 
 --CreateConVar("TTT_APMP_available_pools", "")
-net.Receive("TTT_APMP_NET_MSG", function()
-  local res = net.ReadString()
+local lastGroupElection = nil
+net.Receive("TTT_APMP_ELECTIONS_MSG", function()
+  lastGroupElection = net.ReadString()
+  print("DEBUG received "..lastGroupElection)
+  lastGroupElection = util.JSONToTable(lastGroupElection)
   --RunConsoleCommand("TTT_APMP_available_pools", res)
-  print("DEBUG TTT_APMP_client received: "..res)
+  print("DEBUG TTT_APMP_client table is:")
+  print(table.ToString(lastGroupElection))
 end)
 
 local function checkConVars()
@@ -42,6 +46,32 @@ local function checkConVars()
     elseif pmp[pmp_selected_index-1][1] != GetConVar("TTT_APMP_selected_display_text"):GetString() then
       RunConsoleCommand("TTT_APMP_selected_display_text", pmp[pmp_selected_index-1][1])
       print("INFO TTT_APMP_client sel mismatch: corrected TTT_APMP_selected_display_text to TTT_APMP_selected")
+    end
+  end
+end
+
+local function fif(condition, if_true, if_false)
+  if condition then
+      print("DEBUG condition is: ture")
+    return if_true
+  else
+      print("DEBUG condition is false")
+    return if_false
+  end
+end
+
+local function getGroupDisplayNames(i)
+  if i>1 then
+    if lastGroupElection == nil then
+      return pmp[i-1][1]
+    else
+      return "( got "..lastGroupElection[i][2].." votes) "..pmp[i-1][1]
+    end
+  else
+    if lastGroupElection == nil then
+      return "TTT default"
+    else
+      return "( got "..lastGroupElection[1][2].." votes) ".."TTT default"
     end
   end
 end
@@ -66,11 +96,12 @@ hook.Add("TTTSettingsTabs", "ttt advanced player model pool client settings pane
     local DFormPMSel = vgui.Create("DForm", DPanelList)
     DFormPMSel:SetName("Player model group selection")
     local DComboBoxGroups = DFormPMSel:ComboBox("Player Model Pool", "TTT_APMP_selected_display_text")
-    DComboBoxGroups:SetTooltip("select your wanted player model pool")
+    DComboBoxGroups:SetTooltip("vote for a player model group")
     DComboBoxGroups:SetSortItems(false)
-    DComboBoxGroups:AddChoice("TTT default")
-    for i=1,#pmp do
-      DComboBoxGroups:AddChoice(pmp[i][1])
+
+    DComboBoxGroups:AddChoice(getGroupDisplayNames(1))
+    for i=2,#pmp+1 do
+      DComboBoxGroups:AddChoice(getGroupDisplayNames(i))
     end
 
     DPanelList:AddItem(DFormPMSel)
