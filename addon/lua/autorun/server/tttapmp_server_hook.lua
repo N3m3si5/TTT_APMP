@@ -18,53 +18,33 @@ This file is part of the AddOn "Advanced Player Model Pool" (TTT_APMP) for
 
 -- TODO engine.ActiveGamemode()
 
-print("DEBUG TTT_APMP_server loaded")
+--print("DEBUG TTT_APMP_server loaded")
 --AddCSLuaFile("../data/ttt_apmp_shared.lua") this does not seem to work... for now in shared conf itself!!!
 include ("../data/ttt_apmp_shared.lua")
-CreateConVar("ttt_pmodel", "default")
--- Net Library: https://wiki.garrysmod.com/page/Net_Library_Usage
--- set message name for net Library:
+CreateConVar("TTT_APMP_INDICES_WA", "")
+-- set message name for net Library (https://wiki.garrysmod.com/page/Net_Library_Usage):
 util.AddNetworkString("TTT_APMP_ELECTIONS_MSG")
 
---[[
-local pmp_config = nil
-local function conf_File_IO()
-	if file.Exists("ttt_apmp_conf.txt", "DATA") then
-		-- read to conf
-		pmp_config = file.Read("ttt_apmp_conf.txt", "DATA")
-	else
-		-- write default config
-		file.Write("ttt_apmp_conf.txt", util.TableToJSON(pmp_zelda))
+
+local function tooManyIndicesWorkAround()
+	if pmp_indices_workaround ~= nil then
+		if GAMEMODE.playermodel ~= GetConVar("TTT_APMP_INDICES_WA"):GetString() then		-- player model has changed
+			--print("DEBUG TTT_APMP_server: to-many-indices-workaround, a change...")
+			if pmp_indices_workaround[GAMEMODE.playermodel] ~= nil and pmp_indices_workaround[GetConVar("TTT_APMP_INDICES_WA"):GetString()] == nil then
+				print("DEBUG TTT_APMP_server: apply to-many-indices-workaround")
+				for i,v in ipairs(player.GetHumans()) do
+					v:SendLua("RunConsoleCommand('r_drawmodeldecals', 0)")
+				end
+			elseif pmp_indices_workaround[GAMEMODE.playermodel] == nil and pmp_indices_workaround[GetConVar("TTT_APMP_INDICES_WA"):GetString()] ~= nil then
+				print("DEBUG TTT_APMP_server: undo to-many-indices-workaround")
+				for i,v in ipairs(player.GetHumans()) do
+					v:SendLua("RunConsoleCommand('r_drawmodeldecals', 1)")
+				end
+			end
+			RunConsoleCommand("TTT_APMP_INDICES_WA", GAMEMODE.playermodel)		-- save plaver model to compare to in next round
+		end
 	end
 end
-]]
-
--- hook to Initialize to do initial stuff on map load as well
-hook.Add("Initialize", "TTT_APMP assosiated maps with player model pools",  function()
-	--conf_File_IO()
--- PlayerModelPools that are assosiated with certain maps
--- TODO reimplement to new structure
---[[	local ttt_pmodel_maps = {["ttt_outset_island"] = "zelda",
-		["ttt_lttp_kakariko_a4"] = "zelda",
-		["ttt_lostwoods"] = "zelda",
-		["ttt_hyrulecastle"] = "zelda",
-		["ttt_clocktown_swsw"] = "zelda"}
-	if ttt_pmodel_maps[game.GetMap()] ~= nil then
-		print("DEBUG: current map is assosiated with a player model pool!\n\t=> setting ttt_pmodel to " .. ttt_pmodel_maps[game.GetMap()] )
-		RunConsoleCommand("ttt_pmodel", ttt_pmodel_maps[game.GetMap()] )
-		print("DEBUG ttt_pmodel is " .. GetConVar("ttt_pmodel"):GetString() )
-	end]]
-end)
-
--- Send available player model groups to connecting clients
---[[hook.Add("PlayerInitialSpawn", "TTT_APMP send pm list to player", function(ply)
-	print("DEBUG TTT_APMP_server, sending available pm groups to player "..ply:Nick())
-	net.Start("TTT_APMP_ELECTIONS_MSG")
-	-- write a message to client, for later use
-	net.WriteString("dummy msg from srv to client")
-	net.Send(ply)
-end)
-]]
 
 -- function evaluatePlayerModelPool returns the player model group with most votes
 -- TODO this function is very ugly... tidy up soon!
@@ -80,10 +60,10 @@ local function evaluatePlayerModelPool()
 	for k,v in ipairs(player.GetHumans()) do
 		buf = v:GetInfoNum("TTT_APMP_selected", 1)
 		results[buf][2] = results[buf][2]+1
-		print("DEBUG TTT_APMP_server evaluatePlayerModelPool loop: results["..buf.."][2]="..results[buf][2])
+		--print("DEBUG TTT_APMP_server evaluatePlayerModelPool loop: results["..buf.."][2]="..results[buf][2])
 	end
 
-	-- send results to players
+	-- send results to players (transitional implementation (TODO reimplement))
 	net.Start("TTT_APMP_ELECTIONS_MSG")
 	net.WriteString(util.TableToJSON(results))
 	net.Broadcast()
@@ -98,7 +78,6 @@ local function evaluatePlayerModelPool()
 
 	-- reducing results to winner(s)
 	for i=#results,1,-1 do
-		--print("DEBUG DEBUG tabele "..table.ToString(results))
 		if results[i][2]~=buf then
 			table.remove(results, i)
 		end
@@ -109,17 +88,26 @@ end
 -- hook to TTTPrepareRound: set global TTT pmodel
 hook.Add("TTTPrepareRound", "TTT_APMP core function",  function()
 	if pmp ~= nil then
-		local playerPoolIndex = evaluatePlayerModelPool()
-		print("DeBUG TTT_APMP_server: result of evaluatePlayerModelPool: ".. playerPoolIndex)
+		local pmp_winner = evaluatePlayerModelPool()
+		print("INFO TTT_APMP_server: result of evaluatePlayerModelPool: ".. pmp_winner)
 		-- 1 is the default ttt group, so our first group starts with index 2
-		if playerPoolIndex != 1 then
-			local pm_roll = pmp[playerPoolIndex-1][2]	-- -1: resolve the shift mentioned above
+		if pmp_winner != 1 then
+			local pm_roll = pmp[pmp_winner-1][2]	-- -1: resolve the shift mentioned above
 			if pm_roll != nil then
 				GAMEMODE.playermodel = table.Random(pm_roll)
+				tooManyIndicesWorkAround()
 			else
 				print("Error TTT_APMP_server: unknown player model pool")
 			end
 		end
 		print("INFO TTT_APMP_server: roll for this round is " .. GAMEMODE.playermodel)
+	end
+end)
+
+hook.Add("PlayerInitialSpawn", "TTT_APMP too many indices workaround at firt time connect",  function(ply)
+	if pmp_indices_workaround ~= nil then
+		if pmp_indices_workaround[GAMEMODE.playermodel] ~= nil then
+			ply:SendLua("RunConsoleCommand('r_drawmodeldecals', 0)")
+		end
 	end
 end)

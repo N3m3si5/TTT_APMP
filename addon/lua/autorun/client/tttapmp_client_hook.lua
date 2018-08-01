@@ -18,21 +18,19 @@ This file is part of the AddOn "Advanced Player Model Pool" (TTT_APMP) for
 
 -- TODO engine.ActiveGamemode()
 
-print("DEBUG TTT_APMP_client loaded")
+--print("DEBUG TTT_APMP_client loaded")
 include ("../data/ttt_apmp_shared.lua")
 CreateClientConVar("TTT_APMP_selected", 1, true, true, "TTT player model pool selection; is evaluated by the server")  -- Send choice to server
 CreateConVar("TTT_APMP_selected_display_text", "TTT default")
 CreateConVar("TTT_APMP_PREVIEW_NUM", 1)
 
---CreateConVar("TTT_APMP_available_pools", "")
 local lastGroupElection = nil
 net.Receive("TTT_APMP_ELECTIONS_MSG", function()
   lastGroupElection = net.ReadString()
-  print("DEBUG received "..lastGroupElection)
+  --print("DEBUG received "..lastGroupElection)
   lastGroupElection = util.JSONToTable(lastGroupElection)
-  --RunConsoleCommand("TTT_APMP_available_pools", res)
-  print("DEBUG TTT_APMP_client table is:")
-  print(table.ToString(lastGroupElection))
+  --print("DEBUG TTT_APMP_client table is:")
+  --print(table.ToString(lastGroupElection))
 end)
 
 local function checkConVars()
@@ -47,16 +45,6 @@ local function checkConVars()
       RunConsoleCommand("TTT_APMP_selected_display_text", pmp[pmp_selected_index-1][1])
       print("INFO TTT_APMP_client sel mismatch: corrected TTT_APMP_selected_display_text to TTT_APMP_selected")
     end
-  end
-end
-
-local function fif(condition, if_true, if_false)
-  if condition then
-      print("DEBUG condition is: ture")
-    return if_true
-  else
-      print("DEBUG condition is false")
-    return if_false
   end
 end
 
@@ -154,7 +142,7 @@ hook.Add("TTTSettingsTabs", "ttt advanced player model pool client settings pane
       RunConsoleCommand("TTT_APMP_selected_display_text", value)
       RunConsoleCommand("TTT_APMP_selected", index)
       lastSelectedModelGroup = index
-      print("INFO TTT_APMP_client DFormPMSel: value: "..value..", index: "..index)
+      --print("DEBUG TTT_APMP_client DFormPMSel: value: "..value..", index: "..index)
 
       if index > 1 then
         modelNumber:SetMax(#pmp[index-1][2])
@@ -175,7 +163,7 @@ hook.Add("TTTSettingsTabs", "ttt advanced player model pool client settings pane
       modelNumber:SetValue(val)
 
       if lastValidModelIndex != val then
-        print("DEBUG: Model number changed from "..lastValidModelIndex.." to "..val..", lastSelectedModelGroup is "..lastSelectedModelGroup)
+        --print("DEBUG: Model number changed from "..lastValidModelIndex.." to "..val..", lastSelectedModelGroup is "..lastSelectedModelGroup)
         lastValidModelIndex = val
         DPanelPreview:TryToSetModel()
       end
